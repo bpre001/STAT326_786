@@ -1,0 +1,84 @@
+---
+title: "STATS 326/786"
+author: "Week 1 Tutorial"
+date: \today
+fontsize: 11pt
+output:
+  bookdown::html_document2:
+    fig_height: 5
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+    number_sections: false
+    code_folding: show
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(tidyverse)
+```
+
+
+
+> The National Basketball Association (NBA) is North America's premier men's professional basketball league.  Data has been collected on 54 random NBA players.  The following variables have been measured: height (in feet), weight (in pounds), fgp (field goal percentage), ftp (free-throw percentage), and ppg (average points-per-game).
+
+> 1. Read in `basketball.csv` using `read_csv` and convert the data frame to a `tibble` object.
+
+```{r, message = FALSE}
+
+```
+
+> 2. Use the `mutate` function to create the following new variables in your `tibble` object: height (in cm), weight (in kg), body-mass-index (BMI), and a binary indicator that determines if an NBA player is tall or short (where a player is classified as tall if they are taller than 6.5 ft).
+
+The following conversions will help:
+
+\begin{eqnarray*}
+\text{height (m)} &=& \text{height (ft)} \times 0.3048 \\
+\text{weight (kg)} &=& \text{weight (lb)} \times 0.45359237 \\
+\text{bmi} &=& \frac{\text{weight (kg)}}{\text{height (m)}^2}
+\end{eqnarray*}
+
+Hint: The `ifelse` function may be useful for creating your binary indicator.
+
+```{r}
+
+```
+
+> 3. Use the `group_by` and `summarise` functions to calculate the mean field goal percentage, free throw percentage, and points-per-game for short versus tall NBA players.  
+
+```{r}
+
+```
+
+> 4. Find the largest and smallest average points-per-game for tall versus short NBA players.  
+
+```{r}
+
+```
+
+> 5. Use `ggplot` and `geom_point` to make a scatter plot of weight (in kg) by height (in m), and size by BMI. Use the `alpha` command add transparency.  Comment on the plot.  
+
+```{r}
+
+```
+
+> 6. Use `ggplot` and `geom_point` to make a scatter plot of field goal percentage by average points-per-game, with short and tall NBA players on different panels.  Comment on the plot.  
+
+```{r}
+
+```
+
+> 7. Use `ggplot` and `geom_histogram` to make a histogram of average points-per-game, colouring by your binary height indicator.  Use the `alpha` command to add transparency.  Comment on the plot.
+
+```{r}
+
+```
+
+
+> 8. If you finish early, play around with other `geom` functions, `aes` mappings, as well as other `scale` and `theme` options.
+
+```{r}
+
+```
