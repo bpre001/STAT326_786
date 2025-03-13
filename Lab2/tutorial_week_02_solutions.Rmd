@@ -1,0 +1,208 @@
+---
+title: "STATS 326/786"
+author: "Week 2 Tutorial"
+date: \today
+fontsize: 11pt
+output:
+  bookdown::html_document2:
+    fig_height: 5
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+    number_sections: false
+    code_folding: show
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(lubridate)
+library(tidyverse)
+```
+
+# Problem 1
+
+> Use `lubridate` functions to calculate how many days old you are as of today. Then calculate how long you've been alive in years.
+
+Solution:
+
+```{r}
+birthday <- make_date(year = 1986,
+                      month = 11,
+                      day = 28)
+today() - birthday
+(today() - birthday) / dyears(1)
+```
+
+
+# Problem 2
+
+> Matt went to a conference in Toulouse in 2022.  He departed Auckland at 1515 on 18 November 2022, and landed in Toulouse, France at 1220 on 19 November.  Use `lubridate` functions to compute the number of hours he was in transit for.  Be careful with time-zones.
+
+Solution:
+
+```{r}
+depart <- make_datetime(year = 2022,
+                        month = 11,
+                        day = 18,
+                        hour = 15,
+                        min = 15,
+                        tz = "Pacific/Auckland")
+arrive <- make_datetime(year = 2022,
+                        month = 11,
+                        day = 19,
+                        hour = 12,
+                        min = 20,
+                        tz = "Europe/Paris")
+arrive - depart  # Number of days
+int <- lubridate::interval(depart, arrive)  # Note: Use lubridate, not tsibble interval
+int / dhours(1)  # Number of hours
+
+# # Alternatively
+# as.duration(arrive - depart)  # Number of seconds
+# as.numeric(as.duration(arrive - depart), "hours")  # Number of hours
+```
+
+
+# Problem 3
+
+> Thanksgiving Day in the United States is the fourth Thursday of November.  Find the date for Thanksgiving Day in 2025.
+
+Solution:
+
+```{r}
+
+# Many ways to solve this.  Here's one:
+
+tibble(Date = ymd(20251101:20251130))  %>%    # Create date vector
+  mutate(Day = wday(Date, label = TRUE)) %>%  # Create day of week variable
+  filter(Day == "Thu") %>%                    # Keep Thursday rows
+  slice(4)                                    # Keep fourth Thursday
+
+
+# Here's another:
+
+first.day <- ymd("2025-11-01")  # First day of November 2025
+wday(first.day, label = TRUE)   # Check which day it is
+
+first.thu <- first.day + days(5)  # Add number of days to get to first Thursday
+wday(first.thu, label = TRUE)     # Check it is a Thursday
+
+fourth.thu <- first.thu + weeks(3)  # Add three weeks to get to fourth Thursday
+wday(fourth.thu, label = TRUE)      # Check it is a Thursday
+fourth.thu                          # Find date
+
+```
+
+
+# Problem 4
+
+> Write an `R` function that outputs yesterday's date, and write an `R` function that outputs tomorrow's date.
+
+Solution:
+
+```{r}
+yesterday <- function() {
+  today() - days(1)
+}
+yesterday()
+
+tomorrow <- function() {
+  today() + days(1)
+}
+tomorrow()
+# Alternatively can use -1 and +1
+```
+
+
+# Problem 5
+
+> The `lubridate` package has functions periods, such as `seconds`, `weeks`, and `years`.  There is no function in `lubridate` for fortnights.  Write your own `fortnights` `R` function using pre-existing `lubridate` functions. Run your function and output the periods for 1, 2, and 3 fortnights.  
+
+Solution: 
+
+```{r}
+fortnights <- function(x = 1) {
+  weeks(2 * x)  # Or 2 * weeks(x)
+}
+fortnights(1:3)
+```
+
+# Problem 6
+
+> The `flights` data set in the `nycflights13` package contains information on all flights from New York in 2013.  Consider all flights from JFK (US/Eastern time-zone) to LAX (US/Pacific time-zone).  Install and call this `R` package and type `?flights` to look at the help file to see variable details.
+
+```{r}
+library(nycflights13)
+
+# ?flights  # Look at help file to see variable details
+
+data = flights %>%
+  filter(origin == "JFK",
+         dest == "LAX",
+         !is.na(arr_time)) 
+```
+
+## (a) 
+
+> Create a departure date-time variable by considering the actual departure time and departure delay.  Note that `time_hour` is the date-time variable for the scheduled departure time.  
+
+```{r}
+data = data %>%
+  mutate(dep_datetime = time_hour + minutes(dep_delay))
+```
+
+
+## (b)
+
+> Create an arrival date-time variable by considering the actual arrival time, the date of departure, and whether a flight arrives on the same day or the following day (overnight flights). 
+
+```{r}
+# Date-time assumes same day as scheduled departure
+data = data %>%
+  mutate(arr_time_char = sprintf("%04d", arr_time),  
+         arr_datetime = make_datetime(year, month, day, 
+                                      as.numeric(substr(arr_time_char, 1, 2)), 
+                                      as.numeric(substr(arr_time_char, 3, 4)),
+                                      tz = "US/Pacific"))  
+# Some notes:
+# sprintf: Creates string with four digits and 0 pads shorter strings to the left
+#          e.g., 56 becomes "0056".
+# substr(x, a, b): Looks at a string and takes from a to b of that string.
+# as.numeric: Coerces string to numeric variable as required for make_datetime
+
+# Now adjust the day to account for overnight flights and long arrival delays
+data = data %>%
+  mutate(overnight = arr_datetime < dep_datetime) %>%   # Is it an overnight flight?
+  mutate(arr_datetime = arr_datetime + days(overnight)) # Add 0 or 1 days to arrival date-time
+
+```
+
+
+## (c)
+
+> We are told that the average transit time is 6.5 hours.  Create a variable to calculate the transit time, i.e., the difference between the arrival date-time and departure date-time.  Plot the distribution and comment. Then plot the transit time against the air time and comment.  
+
+```{r, message = FALSE, warning = FALSE}
+data = data %>%
+  mutate(transit_time = arr_datetime - dep_datetime)
+
+ggplot(data = data, 
+       mapping = aes(x = transit_time)) +
+  geom_histogram() + 
+  geom_vline(xintercept = 6.5, linewidth = 1.5, linetype = "dashed") + 
+  theme_bw() 
+
+ggplot(data = data,
+       mapping = aes(x = transit_time,
+                     y = air_time / 60)) + 
+  geom_point(alpha = 0.1) + 
+  geom_abline(slope = 1, intercept = 0) + 
+  theme_bw() + 
+  labs(x = "Transit time (hours)",
+       y = "Air time (hours)") 
+
+```
+
+The average transit time from JFK to LAX does appear to be around 6.5 hours, or perhaps a little lower.  The transit time is always longer than the air time due to processing (arrival time is the time the flight arrives at the gate, not the time it lands).  

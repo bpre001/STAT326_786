@@ -1,0 +1,107 @@
+---
+title: "STATS 326/786"
+author: "Week 2 Tutorial"
+date: \today
+fontsize: 11pt
+output:
+  bookdown::html_document2:
+    fig_height: 5
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+    number_sections: false
+    code_folding: show
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(lubridate)
+library(tidyverse)
+```
+
+# Problem 1
+
+> Use `lubridate` functions to calculate how many days old you are as of today. Then calculate how long you've been alive in years.
+
+```{r}
+
+```
+
+
+# Problem 2
+
+> Matt went to a conference in Toulouse in 2022.  He departed Auckland at 1515 on 18 November 2022, and landed in Toulouse, France at 1220 on 19 November.  Use `lubridate` functions to compute the number of hours he was in transit for.  Be careful with time-zones.
+
+```{r}
+
+```
+
+
+# Problem 3
+
+> Thanksgiving Day in the United States is the fourth Thursday of November.  Find the date for Thanksgiving Day in 2025.
+
+```{r}
+
+```
+
+
+# Problem 4
+
+> Write an `R` function that outputs yesterday's date, and write an `R` function that outputs tomorrow's date.
+
+```{r}
+
+```
+
+
+# Problem 5
+
+> The `lubridate` package has functions periods, such as `seconds`, `weeks`, and `years`.  There is no function in `lubridate` for fortnights.  Write your own `fortnights` `R` function using pre-existing `lubridate` functions. Run your function and output the periods for 1, 2, and 3 fortnights.  
+
+```{r}
+
+```
+
+# Problem 6
+
+> The `flights` data set in the `nycflights13` package contains information on all flights from New York in 2013.  Consider all flights from JFK (US/Eastern time-zone) to LAX (US/Pacific time-zone).  Install and call this `R` package and type `?flights` to look at the help file to see variable details.
+
+```{r, echo = FALSE}
+library(nycflights13)
+
+# ?flights  # Look at help file to see variable details
+
+data = flights %>%
+  filter(origin == "JFK",
+         dest == "LAX",
+         !is.na(arr_time)) 
+```
+
+## (a) 
+
+> Create a departure date-time variable by considering the actual departure time and departure delay.  Note that `time_hour` is the date-time variable for the scheduled departure time.  
+
+```{r}
+
+```
+
+
+## (b)
+
+> Create an arrival date-time variable by considering the actual arrival time, the date of departure, and whether a flight arrives on the same day or the following day (overnight flights). 
+
+```{r}
+
+```
+
+
+## (c)
+
+> We are told that the average transit time is 6.5 hours.  Create a variable to calculate the transit time, i.e., the difference between the arrival date-time and departure date-time.  Plot the distribution and comment. Then plot the transit time against the air time and comment.  
+
+```{r, message = FALSE, warning = FALSE}
+
+```
