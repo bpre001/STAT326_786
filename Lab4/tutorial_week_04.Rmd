@@ -1,0 +1,117 @@
+---
+title: "STATS 326/786"
+author: "Week 4 Tutorial"
+date: \today
+fontsize: 11pt
+output:
+  bookdown::html_document2:
+    fig_height: 5
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+    number_sections: false
+    code_folding: show
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(fpp3)
+```
+
+
+# Problem 1
+
+> Below is some fake seasonal data (with a perfectly periodic pattern) with no trend and no remainder components.  In class, we learned that moving averages are useful for smoothing time series. Compute a $2 \times 4~\text{MA}$ and a $5~\text{MA}$ and overlay these on the original time series.  What do you notice, and why is this happening?  
+
+```{r, warning = FALSE}
+
+data <- tsibble(Quarter = yearquarter(1:40),
+                y = rep(c(4, 9, 3, 7), 10),
+                index = Quarter)
+
+data %>% 
+  autoplot(y, colour = "grey") + 
+  theme_minimal()
+
+```
+
+
+> Repeat the above exercise, but for the fake data below.  This data is seasonal (again, with a perfectly periodic pattern) with a linear trend and no remainder component.  
+
+```{r, warning=FALSE}
+
+data <- tsibble(Quarter = yearquarter(1:40),
+                y = rep(c(4, 9, 3, 7), 10) + 0.5 * 1:40,
+                index = Quarter)
+
+data %>% 
+  autoplot(y, colour = "grey") + 
+  theme_minimal()
+
+```
+
+
+> If you were to apply a $3 \times 5~\text{MA}$ to a time series, analytically derive the weights that each observation contributes to the moving-averaged time series at time $t$.  
+
+
+
+# Problem 2
+
+> Below is an example of a time series with multiplicative seasonality.  In this problem, you learn how to perform your own (multiplicative) classical decomposition from first principles.  
+
+```{r}
+a10 <- PBS %>%
+  filter(ATC2 == "A10") %>%
+  select(Month, Concession, Type, Cost) %>%
+  summarise(Total_Cost = sum(Cost)) %>%
+  mutate(Total_Cost = Total_Cost / 1e6,
+         Month.Name = month(Month, label = TRUE)) 
+
+a10 %>%
+  autoplot(Total_Cost) + 
+  theme_minimal()
+```
+
+> Calculate the trend-cycle by performing a $2\times 12~\text{MA}$ on your time series.
+
+```{r}
+
+```
+         
+> Compute the detrended time series (original time series divided by trend).    
+         
+```{r}         
+
+```
+
+> Calculate the seasonal factor for each month (noting that these must sum to 12 for a monthly time series).  
+
+```{r}
+
+```
+
+> Merge your data sets so the seasonal factor is now included in your original `tsibble`.
+
+```{r}
+
+```
+
+> Compute the remainder component (as detrended divided by seasonal) and seasonally-adjusted component (as original time series divided by seasonal).
+
+```{r}
+
+```
+
+> Plot the original time series and overlay it with the trend-cycle and seasonally-adjusted series.  
+
+```{r, warning = FALSE}
+
+```
+
+> Extra: See if you can re-create the classical decomposition plot.
+
+```{r, warning = FALSE}
+
+```

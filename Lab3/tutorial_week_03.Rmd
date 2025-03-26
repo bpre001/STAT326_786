@@ -1,0 +1,93 @@
+---
+title: "STATS 326/786"
+author: "Week 3 Tutorial"
+date: \today
+fontsize: 11pt
+output:
+  bookdown::html_document2:
+    fig_height: 5
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+    number_sections: false
+    code_folding: show
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(fpp3)
+```
+
+# Problem 1
+
+> Explore the `aus_retail` data set in the `tsibbledata` package.  Below is a list of the Australian states and industries in this data set.
+
+```{r}
+unique(aus_retail$State)
+unique(aus_retail$Industry)
+```
+
+> Select one time series, plot it, and comment on what you observe.  Things to discuss include trend (linear or nonlinear, positive or negative), seasonality (additive or multiplicative), cycles, outliers, structural breaks, etc.  
+
+```{r}
+
+```
+
+
+> Create a seasonal plot and a seasonal subseries of your selected time series.  Comment on any interesting patterns you observe.
+
+```{r}
+
+```
+
+
+> Make a calander adjustment to your time series and re-plot the seasonal plots.  Discuss whether there is a calendar effect for your original time series.  
+
+```{r}
+
+```
+
+
+> Perform a Box-Cox transformation to your calendar-adjusted time series and plot your transformed data.  What is the optimal value for $\lambda$ for your particular series? 
+
+```{r}
+
+```
+
+
+
+# Problem 2
+
+> Create your own `tsibble` object for a white noise time series with mean 0 and standard deviation 1.  First, create a `year` sequence from 1900 to 2024.  Then create a `y` vector (of the same length) of $\text{Normal}(0, 1)$ random variables using the `rnorm` function.  Make sure your `index` in your `tsibble` is `year`.  
+
+```{r}
+year <- 1900:2024
+T <- length(year)
+y <- rnorm(T)
+data <- tsibble(year = year,
+                y = y,
+                index = year)
+```
+
+> Plot a time plot of the data.  Comment on any features you observe.
+
+```{r}
+
+```
+
+
+> The dashed blue horizontal lines in the `ACF` plot represent the 95\% significance level for the autocorrelation coefficients.   This is given by $\pm 1.96 / \sqrt{T}$, where $T$ is the length of the time series. Plot the `ACF` plot, adding on your own 90\% significance lines in red.  
+Hint: If `qnorm(0.975) = 1.96`, what will your new multiplier be?
+
+```{r}
+
+```
+
+> Produce a lag plot for your data.  Comment on why there is no colour in your plot.  Comment on the any patterns you observe.  
+
+```{r}
+
+```
+

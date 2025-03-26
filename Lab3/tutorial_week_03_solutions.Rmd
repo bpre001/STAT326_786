@@ -1,0 +1,141 @@
+---
+title: "STATS 326/786"
+author: "Week 3 Tutorial"
+date: \today
+fontsize: 11pt
+output:
+  bookdown::html_document2:
+    fig_height: 5
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+    number_sections: false
+    code_folding: show
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(fpp3)
+```
+
+# Problem 1
+
+> Explore the `aus_retail` data set in the `tsibbledata` package.  Below is a list of the Australian states and industries in this data set.
+
+```{r}
+unique(aus_retail$State)
+unique(aus_retail$Industry)
+```
+
+> Select one time series, plot it, and comment on what you observe.  Things to discuss include trend (linear or nonlinear, positive or negative), seasonality (additive or multiplicative), cycles, outliers, structural breaks, etc.  
+
+```{r}
+
+# One example: Queensland takeaway food services
+d <- aus_retail %>% 
+  filter(State == "Queensland",
+         Industry == "Takeaway food services") 
+
+d %>% 
+  autoplot(Turnover) + 
+  theme_minimal()
+  
+```
+
+There is an increasing trend in retail turnover for takeaway food services in Queensland.  It is a little difficult to determine whether this is linear or nonlinear, but linear seems to provide a reasonable approximation.  There appears to be multiplicative seasonality, where the magnitudes of the regular peaks and troughs are getting larger over time.  There also appears to be a cycle present in the time series, becoming more noticeable from 1995 onward.  This cycle appears to have a duration of approximately 5 to 8 years.  
+
+
+> Create a seasonal plot and a seasonal subseries of your selected time series.  Comment on any interesting patterns you observe.
+
+```{r}
+d %>%
+  gg_season(Turnover)
+d %>%
+  gg_subseries(Turnover)
+```
+
+The time series is seasonal.  The largest average turnover is in December and January (the summer holiday period in Australia).  February has the lowest average turnover, but this could be because there are fewer days in February (i.e., a calendar effect).  We can also see an increasing year-on-year trend for each month in the subseries plot and that the turnover, on average, increases as the year increases.  
+
+
+> Make a calander adjustment to your time series and re-plot the seasonal plots.  Discuss whether there is a calendar effect for your original time series.
+
+```{r}
+d <- d %>% 
+mutate(Days = days_in_month(Month)) %>%
+  mutate(Turnover_Per_Day = Turnover / Days)
+
+d %>%
+  gg_season(Turnover_Per_Day)
+
+d %>%
+  gg_subseries(Turnover_Per_Day)
+```
+
+Yes, there is a calendar effect.  This is most noticeable in February, where we can see that the average (blue line) rises when we consider turnover per day rather than total turnover per month.  We also see this happening, but to a lesser degree, for the 30-day months such as April, September, and November.  
+
+
+> Perform a Box-Cox transformation to your calendar-adjusted time series and plot your transformed data.  What is the optimal value for $\lambda$ for your particular series? 
+
+```{r}
+
+lambda <- d %>%
+  features(Turnover_Per_Day, features = guerrero) %>%
+  pull(lambda_guerrero)
+lambda
+
+d %>%
+  autoplot(box_cox(Turnover_Per_Day, lambda)) + 
+  ylab("Box-Cox Transformed Turnover Per Day") + 
+  theme_minimal()
+
+```
+
+The optimal value for $\lambda$ for this time series is 0.2867.  
+
+
+# Problem 2
+
+> Create your own `tsibble` object for a white noise time series with mean 0 and standard deviation 1.  First, create a `year` sequence from 1900 to 2024.  Then create a `y` vector (of the same length) of $\text{Normal}(0, 1)$ random variables using the `rnorm` function.  Make sure your `index` in your `tsibble` is `year`.  
+
+```{r}
+set.seed(12345)
+year <- 1900:2024
+T <- length(year)
+data <- tsibble(year = year,
+                y = rnorm(T), 
+                index = year)
+```
+
+> Plot a time plot of the data.  Comment on any features you observe.
+
+```{r}
+data %>%
+  autoplot(y) + 
+  theme_minimal()
+```
+
+There are no obvious patterns in the data.  There is no trend, and the mean of the time series is roughly 0.  There is no seasonal pattern and no obvious cycles.  The range is roughly between -2.5 and 2.5.  
+
+> The dashed blue horizontal lines in the `ACF` plot represent the 95\% significance level for the autocorrelation coefficients.   This is given by $\pm 1.96 / \sqrt{T}$, where $T$ is the length of the time series. Plot the `ACF` plot, adding on your own 90\% significance lines in red.  
+Hint: If `qnorm(0.975) = 1.96`, what will your new multiplier be?
+
+```{r}
+data %>%
+  ACF(y) %>%
+  autoplot() + 
+  geom_hline(yintercept = c(-1, 1) * qnorm(0.95) / sqrt(T),
+             colour = "red", linetype = "dashed") + 
+  theme_minimal()
+```
+
+> Produce a lag plot for your data.  Comment on why there is no colour in your plot.  Comment on the any patterns you observe.  
+
+```{r}
+data %>%
+  gg_lag(y, geom = "point") + 
+  theme_minimal()
+```
+
+There is no colour because this is not a seasonal time series (it is annual).  Each lag is uncorrelated (i.e., no linear relationship between the time series and lagged versions of itself).  This makes sense as we know the time series is white noise (we designed it this way by taking random independent samples from a Normal distribution with zero mean and constant variance).  

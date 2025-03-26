@@ -149,7 +149,7 @@ data = flights %>%
 > Create a departure date-time variable by considering the actual departure time and departure delay.  Note that `time_hour` is the date-time variable for the scheduled departure time.  
 
 ```{r}
-data = data %>%
+data <- data %>%
   mutate(dep_datetime = time_hour + minutes(dep_delay))
 ```
 
@@ -202,6 +202,11 @@ ggplot(data = data,
   theme_bw() + 
   labs(x = "Transit time (hours)",
        y = "Air time (hours)") 
+
+data %>% 
+  summarise(mean(transit_time)) %>% 
+  ggplot(aes(x = 1, y = `mean(transit_time)`)) +
+  geom_col()
 
 ```
 

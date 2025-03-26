@@ -18,6 +18,13 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 library(tidyverse)
+
+bday <- ymd("19720402")
+today <- Sys.Date()
+age <- today - bday
+age_in_years <- age / dyears(10)
+
+
 ```
 
 
