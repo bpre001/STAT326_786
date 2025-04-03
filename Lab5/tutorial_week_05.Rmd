@@ -1,0 +1,158 @@
+---
+title: "STATS 326/786"
+author: "Week 5 Tutorial"
+date: \today
+fontsize: 11pt
+output:
+  bookdown::html_document2:
+    fig_height: 5
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+    number_sections: false
+    code_folding: show
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(tidyverse)
+library(fpp3)
+```
+
+
+# Problem 1
+
+In this question, we will learn how to use standard `dplyr` functions to manually forecast time series using the four benchmark methods we learned in class.  Below is the time series for quarterly tobacco and cigarette production (in tonnes) in Australia.  
+
+```{r}
+data <- aus_production %>%
+  select(Quarter, Tobacco) %>%
+  filter(!is.na(Tobacco))
+data %>%
+  autoplot(Tobacco) +
+  ylab("Tobacco and cigarette production (tonnes)") + 
+  theme_minimal()
+```
+
+
+> From your `tsibble` object, extract and store the first Tobacco value.  The `pull` and `first` functions are useful.
+
+```{r}
+
+```
+
+> From your `tsibble` object, extract and store the last Tobacco value.  The `pull` and `last` functions are useful.
+
+```{r}
+
+```
+
+> From your `tsibble` object, calculate the mean of the Tobacco series and store this value.  The `pull` and `mean` functions are useful.
+
+```{r}
+
+```
+
+> From your `tsibble` object, calculate the number of observations there are in the Tobacco series and store this value.  The `pull` and `length` functions are useful.
+
+```{r}
+
+```
+
+> From your `tsibble` object, extract the final four Tobacco values and store these values.  The `slice_tail` and `pull` functions are useful.
+
+```{r}
+
+```
+
+> We want to forecast $h = 24$ quarters into the future.  Create a date variable for these 24 quarters, and call it `Quarter` (this is the same name as the date variable in your `tsibble`).  You can do this by extracting the last quarter from your `tsibble` and adding a sequence from 1 to 24 to this.  
+
+```{r}
+
+```
+
+> Create the forecasts for the average method.  You need to create a vector that repeats the mean you calculated earlier, 24 times.
+
+```{r}
+
+```
+
+> Create the forecasts for the naive method.  You need to create a vector that repeats the last value you calculated earlier, 24 times.
+
+```{r}
+
+```
+
+> Create the forecasts for the seasonal naive method.  You need to create a vector that repeats the last 4 values you calcualted earlier, 6 times (i.e., 24 / 4).
+
+```{r}
+
+```
+
+> Create the forecasts for the random walk with drift method.  You will need to find the slope of the line between the last and first points and figure out how to extend this line from the last observation in the time series.  
+
+```{r}
+
+```
+
+> Combine all of these forecasts into a new `tsibble` object, with `index = Quarter`.
+
+```{r}
+
+```
+
+> Plot your data with all of the forecasts.  Make sure you have a legend on your plot, where each forecast method has a different colour.  
+
+```{r}
+
+```
+
+# Problem 2
+
+The forecasts on transformed data produced in the `R` packages in this course are "bias-adjusted", meaning we will get a mean point-estimate.  In this question, we will learn to manually perform a bias-correction on forecasts of transformed time series.  We will only consider the naive forecast method here and the log transformation. 
+
+The naive method has the following forecast distribution: $y_{T+h | T} \sim N(y_T, h \hat{\sigma}^2)$, 
+where $\hat{\sigma}^2 = \frac{1}{T - K - M}\sum_{t = 1}^T e_t^2$.  
+
+Note here that $T$ is the time series length, $K$ is the number of parameters estimated (which is 0 for the naive method), and $M$ is the number of missing values (which is 1 for the naive method).  Also note that because we are considering a log transformed series, the residuals, $e_t$, in this calculation are the innovation residuals.  
+
+Below is the time series for monthly turnover (in millions AUD) in the household goods retail industry in Victoria, Australia.  This has been log transformed.  
+
+```{r}
+data <- aus_retail %>%
+  filter(State == "Victoria",
+         Industry == "Household goods retailing") %>%
+  mutate(log.Turnover = log(Turnover))
+data %>%
+  autoplot(log.Turnover) +
+  theme_minimal()
+```
+
+> Fit the naive method to your time series manually.  You can do this by creating a `fitted` variable that applies the `lag` function to `log.Turnover`.  Then calculate the innovation residuals for this time series and call it `innov`.
+
+```{r}
+
+```
+
+> Compute $\hat{\sigma}^2$.  We want to forecast $h = 12$ months into the future, so also compute $\hat{\sigma}_h^2$ for each $h$.
+
+```{r}
+
+```
+
+> Compute your $h = 12$ bias-adjusted forecasts.  
+Note that the back-transformed median forecast (not bias-adjusted) is $\exp(\mu)$, where $\mu$ is the forecast on the log-scale.  The back-transformed mean forecast (bias-adjusted) is $\exp(\mu)(1 + \frac{\hat{\sigma}_h^2}{2})$.
+
+```{r}
+
+```
+
+> Perform a "sanity check", comparing your bias-adjusted back-transformed means to the means produced from the in-built `NAIVE` model.
+
+```{r}
+
+```
+
+

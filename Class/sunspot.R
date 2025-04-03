@@ -2,7 +2,8 @@ library(tidyverse)
 library(fpp3)
 
 # Read in monthly sunspot data
-data <- as_tsibble(sunspot.month)
+data <- as_tsibble(sunspot.month) %>%
+  mutate(value = 50 + 25 * cos(year(index) * pi / 24))
 
 # Visualise
 data %>%

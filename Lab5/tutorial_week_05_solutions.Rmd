@@ -1,0 +1,255 @@
+---
+title: "STATS 326/786"
+author: "Week 5 Tutorial"
+date: \today
+fontsize: 11pt
+output:
+  bookdown::html_document2:
+    fig_height: 5
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+    number_sections: false
+    code_folding: show
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(tidyverse)
+library(fpp3)
+```
+
+
+# Problem 1
+
+In this question, we will learn how to use standard `dplyr` functions to manually forecast time series using the four benchmark methods we learned in class.  Below is the time series for quarterly tobacco and cigarette production (in tonnes) in Australia.  
+
+```{r}
+data <- aus_production %>%
+  select(Quarter, Tobacco) %>%
+  filter(!is.na(Tobacco))
+data %>%
+  autoplot(Tobacco) +
+  ylab("Tobacco and cigarette production (tonnes)") + 
+  theme_minimal()
+```
+
+
+> From your `tsibble` object, extract and store the first Tobacco value.  The `pull` and `first` functions are useful.
+
+```{r}
+first.obs <- data %>% 
+  pull() %>%
+  first()
+```
+
+> From your `tsibble` object, extract and store the last Tobacco value.  The `pull` and `last` functions are useful.
+
+```{r}
+last.obs <- data %>% 
+  pull() %>%
+  last()
+```
+
+> From your `tsibble` object, calculate the mean of the Tobacco series and store this value.  The `pull` and `mean` functions are useful.
+
+```{r}
+mean.obs <- data %>%
+  pull() %>%
+  mean()
+```
+
+> From your `tsibble` object, calculate the number of observations there are in the Tobacco series and store this value.  The `pull` and `length` functions are useful.
+
+```{r}
+n.obs <- data %>%
+  pull() %>%
+  length()
+```
+
+> From your `tsibble` object, extract the final four Tobacco values and store these values.  The `slice_tail` and `pull` functions are useful.
+
+```{r}
+last.4 <- data %>%
+  slice_tail(n = 4) %>%
+  pull()
+```
+
+> We want to forecast $h = 24$ quarters into the future.  Create a date variable for these 24 quarters, and call it `Quarter` (this is the same name as the date variable in your `tsibble`).  You can do this by extracting the last quarter from your `tsibble` and adding a sequence from 1 to 24 to this.  
+
+```{r}
+h <- 24
+last.date <- data %>%
+  select(Quarter) %>% 
+  pull() %>% 
+  last()
+Quarter <- last.date + 1:h
+```
+
+> Create the forecasts for the average method.  You need to create a vector that repeats the mean you calculated earlier, 24 times.
+
+```{r}
+mean <- rep(mean.obs, h)
+```
+
+> Create the forecasts for the naive method.  You need to create a vector that repeats the last value you calculated earlier, 24 times.
+
+```{r}
+naive <- rep(last.obs, h)
+```
+
+> Create the forecasts for the seasonal naive method.  You need to create a vector that repeats the last 4 values you calcualted earlier, 6 times (i.e., 24 / 4).
+
+```{r}
+seasonal_naive <- rep(last.4, h / 4)
+```
+
+> Create the forecasts for the random walk with drift method.  You will need to find the slope of the line between the last and first points and figure out how to extend this line from the last observation in the time series.  
+
+```{r}
+drift <- last.obs + ((last.obs - first.obs) / n.obs) * 1:h
+```
+
+> Combine all of these forecasts into a new `tsibble` object, with `index = Quarter`.
+
+```{r}
+fc <- tsibble(Quarter = Quarter,
+              mean = mean,
+              naive = naive,
+              seasonal_naive = seasonal_naive,
+              drift = drift,
+              index = Quarter)
+```
+
+> Plot your data with all of the forecasts.  Make sure you have a legend on your plot, where each forecast method has a different colour.  
+
+```{r}
+# Pivot the forecast table to be longer
+fc.long <- fc %>%
+  pivot_longer(cols = c(mean, naive, seasonal_naive, drift),
+               names_to = "Method",
+               values_to = "Forecast")
+
+# Plot the data
+ggplot(data = data,
+       mapping = aes(x = Quarter)) +
+  geom_line(aes(y = Tobacco), colour = "black") +            # Original time series
+  geom_line(data = fc.long,
+            mapping = aes(y = Forecast, colour = Method)) +  # Forecasts
+  guides(colour = guide_legend(title = "Forecast Method")) +
+  theme_minimal()
+
+# Alternative solution (but I think this is messier):
+# ggplot(data = data,
+#        mapping = aes(x = Quarter)) +
+#   geom_line(aes(y = Tobacco), colour = "black") +  
+#   geom_line(data = fc, mapping = aes(y = mean, colour = "Mean")) + 
+#   geom_line(data = fc, mapping = aes(y = naive, colour = "Naive")) + 
+#   geom_line(data = fc, mapping = aes(y = seasonal_naive, colour = "Seasonal Naive")) + 
+#   geom_line(data = fc, mapping = aes(y = drift, colour = "Random Walk with Drift")) +
+#   guides(colour = guide_legend(title = "Forecast Method")) +
+#   theme_minimal()
+```
+
+# Problem 2
+
+The forecasts on transformed data produced in the `R` packages in this course are "bias-adjusted", meaning we will get a mean point-estimate.  In this question, we will learn to manually perform a bias-correction on forecasts of transformed time series.  We will only consider the naive forecast method here and the log transformation. 
+
+The naive method has the following forecast distribution: $y_{T+h | T} \sim N(y_T, h \hat{\sigma}^2)$, 
+where $\hat{\sigma}^2 = \frac{1}{T - K - M}\sum_{t = 1}^T e_t^2$.  
+
+Note here that $T$ is the time series length, $K$ is the number of parameters estimated (which is 0 for the naive method), and $M$ is the number of missing values (which is 1 for the naive method).  Also note that because we are considering a log transformed series, the residuals, $e_t$, in this calculation are the innovation residuals.  
+
+Below is the time series for monthly turnover (in millions AUD) in the household goods retail industry in Victoria, Australia.  This has been log transformed.  
+
+```{r}
+data <- aus_retail %>%
+  filter(State == "Victoria",
+         Industry == "Household goods retailing") %>%
+  mutate(log.Turnover = log(Turnover))
+data %>%
+  autoplot(log.Turnover) +
+  theme_minimal()
+```
+
+> Fit the naive method to your time series manually.  You can do this by creating a `fitted` variable that applies the `lag` function to `log.Turnover`.  Then calculate the innovation residuals for this time series and call it `innov`.
+
+```{r}
+data <- data %>%
+  mutate(fitted = lag(log.Turnover),
+         innov = log.Turnover - fitted)
+```
+
+> Compute $\hat{\sigma}^2$.  We want to forecast $h = 12$ months into the future, so also compute $\hat{\sigma}_h^2$ for each $h$.
+
+```{r}
+# Forecast horizon
+h <- 12
+
+# Square function
+sq <- function(x) {
+  x ^ 2
+}
+
+# Calculate sum of squared innovation residuals
+SSE <- data %>%
+  pull(innov) %>%
+  sq() %>%
+  sum(na.rm = TRUE) 
+# Could also use mutate to create innov2 = innov ^ 2 instead
+
+# Degrees of Freedom: T - K - M 
+# i.e., Length of series - # parameters estimated - # NAs in innovations
+T <- data %>%
+  pull(innov) %>%
+  length()
+K <- 0
+M <- data %>%
+  pull(innov) %>%
+  is.na() %>%
+  sum()
+DOF <- T - K - M
+# Note: Could also have done this by looking at the data set
+
+# Variance estimate for Naive method
+sigma2.hat <- SSE / DOF
+
+# Variance estimate for each of the forecasts
+sigma2.hat.h <- 1:h * sigma2.hat
+```
+
+> Compute your $h = 12$ bias-adjusted forecasts.  
+Note that the back-transformed median forecast (not bias-adjusted) is $\exp(\mu)$, where $\mu$ is the forecast on the log-scale.  The back-transformed mean forecast (bias-adjusted) is $\exp(\mu)(1 + \frac{\hat{\sigma}_h^2}{2})$.
+
+```{r}
+# Extract the last observation for naive method
+last.obs <- data %>% 
+  pull(log.Turnover) %>%
+  last()
+
+# Calculate forecasts 
+log.fc <- rep(last.obs, h)  # Forecasts on transformed scale
+median.fc <- exp(log.fc)    # Back-transformed forecasts (median)
+mean.fc <- exp(log.fc) * (1 + sigma2.hat.h / 2)  # Bias-adjusted back-transformed forecasts (mean)
+```
+
+> Perform a "sanity check", comparing your bias-adjusted back-transformed means to the means produced from the in-built `NAIVE` model.
+
+```{r}
+# Fit naive model
+fit <- data %>%
+  model(NAIVE(log(Turnover)))
+
+# Forecast 12 months
+fc <- fit %>%
+  forecast(h = 12)
+
+# Extract means and compare to ours
+fc %>%
+  pull(.mean)
+mean.fc
+```
+
+

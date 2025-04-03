@@ -1,18 +1,18 @@
 # Original signal
 
-x <- 0:11 * pi / 4
-x <- cos(x)
+x <- 2 * pi * 0:2000 / 1e3
+x <- cos(x) 
 
 # Compute DFT
 X <- fft(x)
 
 # Create a data frame for plotting
 df <- data.frame(
-  k = 0:(length(X) - 1),
-  Re = Re(X),
-  Im = Im(X),
-  Magnitude = Mod(X),
-  Phase = Arg(X)
+  k = 0:(ceiling(length(X))/2),
+  Re = Re(X[1:(length(k))]),
+  Im = Im(X[1:(length(k))]),
+  Magnitude = Mod(X[1:(length(k))]),
+  Phase = Arg(X[1:(length(k))])
 )
 
 # Load ggplot2 for visualization
@@ -79,3 +79,5 @@ ggplot(basis, aes(x = n, y = value)) +
   labs(title = "Real Part of DFT Basis Functions (N = 4)",
        x = "Sample (n)",
        y = "Amplitude")
+
+plot(x)
