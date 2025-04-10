@@ -1,0 +1,114 @@
+---
+title: "STATS 326/786"
+author: "Week 6 Tutorial"
+date: \today
+fontsize: 11pt
+output:
+  bookdown::html_document2:
+    fig_height: 5
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+    number_sections: false
+    code_folding: show
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(tidyverse)
+library(fpp3)
+```
+
+
+# Problem 1: Forecasting with decompositions
+
+Below is a monthly time series of Auckland temperatures from July 1994 until January 2024.  
+
+```{r, message = FALSE}
+data = read_csv("auckland_temps.csv") %>%
+  mutate(Month = yearmonth(Month)) %>%
+  as_tsibble(index = Month)
+
+data %>%
+  autoplot(Temperature) +
+  labs(y = "Temperature (\u00B0C)",
+       title = "Monthly Average Temperatures in Auckland (Jul 1994 - Jan 2024)")
+```
+
+> Fit an STL decomposition to this time series setting `robust = TRUE`, then print the last 12 months from the decomposition table. 
+
+```{r}
+
+```
+
+> Using the printed `dable`, manually forecast $h = 1$ period ahead (to February 2024).  You should use the seasonal naive method for the seasonal component and the naive method for the seasonally-adjusted series.  Recall that you can add these two forecasts together to get your overall forecast.
+
+```{r}
+
+```
+
+> Now write `R` code to fit an STL decomposition for forecasting, where the seasonal component uses the `SNAIVE` method (by default) and the seasonally-adjusted series uses the `NAIVE` method.  You will need to use the `decomposition_model` function.  
+
+```{r}
+
+```
+
+> Overlay the fitted values on the time series and comment on the fit.  Comment on why there are missing values at the start of the series.  
+
+```{r, warning = FALSE}
+
+```
+
+> Perform a residual analysis to determine if you would trust this model for forecasting.  For the Ljung-Box test, choose `lag = 24` and `dof = 0`.  
+
+```{r, warning = FALSE}
+
+```
+
+> Regardless of your conclusion to the previous question, forecast four years (48 months) ahead and plot.  Then compare the $h = 1$ forecast to your previously manually calculated one.  Are they the same?
+
+```{r}
+
+```
+
+
+# Problem 2: Forecast accuracy
+
+Consider the following time series.
+
+```{r}
+data <- tsibble(x = 1:10,
+                y = c(1, 4, 5, 2, 3, 7, 6, 10, 8, 9),
+                index = x)
+
+data %>% autoplot(y) + xlab("x")
+```
+
+> Split this into a training set (the first six observations) and test set (the last four observations).  Name the training set `train` and the test set `test`.  
+
+```{r}
+
+```
+
+> Once you have your training set, uncomment the code below.  This will plot the four period forecasts from the training set using the naive, average, and random-walk with drift methods.  Visually compare the forecasts with the true observations (test set).  Which method do you think will have the best forecast accuracy?  Which method do you think will have the worst forecast accuracy?  
+
+```{r}
+# Uncomment once you have your training set (called train)
+# fc = train %>%
+#   model(naive = NAIVE(y),
+#         average = MEAN(y),
+#         drift = RW(y ~ drift())) %>%
+#   forecast(h = 4)
+# fc %>% 
+#   autoplot(data, level = NULL) 
+```
+
+> Verify your answer to the previous question by manually calculating the following forecast accuracy measures: MAE and RMSE.
+
+```{r}
+
+```
+
+
