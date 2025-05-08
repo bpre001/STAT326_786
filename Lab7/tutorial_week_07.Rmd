@@ -1,0 +1,101 @@
+---
+title: "STATS 326/786"
+author: "Week 7 Tutorial"
+date: \today
+fontsize: 11pt
+output:
+  bookdown::html_document2:
+    fig_height: 5
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+    number_sections: false
+    code_folding: show
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(tidyverse)
+library(fpp3)
+```
+
+
+# Problem 1
+
+Dummy variables are very useful for time series regression.  In this problem you will learn how to create your own trading day dummy variable for 2023 in New Zealand.  Below is a `tsibble` with all the days in 2023.
+
+```{r}
+data <- tsibble(Date = make_date(2023, 1, 1) + 0:364,
+                index = Date)
+```
+
+> Create a variable that determines the day of the week.
+
+```{r}
+
+```
+
+> Create a weekday dummy variable that is 1 if the day is a weekday, and 0 if it is a weekend.
+
+```{r}
+
+```
+  
+> Create a public holiday dummy variable that is 1 if the date is a public holiday, and 0 otherwise.  The public holidays for 2023 in New Zealand are: New Year's Day (2023-01-01), Day after New Year's Day (2023-01-02), Waitangi Day (2023-02-06), Good Friday (2023-04-07), Easter Monday (2023-04-10), ANZAC Day (2023-04-25), King's Birthday (2023-06-05), Matariki (2023-07-14), Labour Day (2023-10-23), Christmas Day (2023-12-25), Boxing Day (2023-12-26).
+
+```{r}
+
+```
+         
+> Create a trading day dummy variable that is 1 if the day is a weekday and not a public holiday, and 0 otherwise.
+                       
+```{r}
+
+```
+
+
+# Problem 2
+
+The data set `souvenirs` contains the monthly sales figures of a shop which opened in January 1987 and sells gifts, souvenirs, and novelties. The shop is situated on the wharf at a beach resort town in Queensland, Australia. The sales volume varies with the seasonal population of tourists. There is a large influx of visitors to the town at Christmas and for the local surfing festival, held every March since 1988. Over time, the shop has expanded its premises, range of products, and staff.  Below is a plot of this time series.  
+
+```{r}
+data <- souvenirs
+data %>%
+  autoplot(Sales) + 
+  theme_minimal()
+```
+
+> Create a "surfing festival" dummy variable.
+
+```{r}
+
+```
+
+> Fit a regression model to the logarithm of these sales data with a linear trend, seasonal dummies, and a “surfing festival” dummy variable.  
+
+```{r}
+
+```
+
+> Perform a model check to see whether the assumptions of time series regression are met.  
+
+```{r}
+
+```
+
+
+> Regardless of your answers to the above questions, use your regression model to predict the monthly sales for 1994, 1995, and 1996. Produce prediction intervals for each of your forecasts.
+
+```{r}
+
+```
+
+> Refit the regression model, but use Fourier terms instead of seasonal dummies.  Compare $K = 1, 2, 3, 4, 5, 6$ using AICc.  Which model has the best fit?
+
+```{r}
+
+```
+
+

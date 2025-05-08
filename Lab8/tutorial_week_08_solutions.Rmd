@@ -1,0 +1,219 @@
+---
+title: "STATS 326/786"
+author: "Week 8 Tutorial"
+date: \today
+fontsize: 11pt
+output:
+  bookdown::html_document2:
+    fig_height: 5
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+    number_sections: false
+    code_folding: show
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(tidyverse)
+library(fpp3)
+library(grid)
+library(gridExtra)
+```
+
+
+# Problem 1
+
+Consider the number of pigs slaughtered in Victoria, available in the `aus_livestock` data set.  This is plotted below.
+
+```{r, echo = FALSE}
+pigs <- aus_livestock %>%
+  filter(State == "Victoria") %>%
+  filter(Animal == "Pigs")
+
+pigs %>% 
+  autoplot(Count) + 
+  theme_minimal()
+```
+
+
+> Fit three different simple exponential smoothing (`ETS(A,N,N)`) models.  One with $\alpha = 0.001$, one with $\alpha = 0.999$ and one with $\alpha$ that is automatically optimised.  You can specify the value of $\alpha$ in the `trend` function.  
+
+Solution:
+
+```{r}
+fit = pigs %>%
+  model(a0 = ETS(Count ~ error("A") + trend("N", alpha = 0.001) + season("N")),
+        a1 = ETS(Count ~ error("A") + trend("N", alpha = 0.999) + season("N")),
+        a.opt = ETS(Count ~ error("A") + trend("N") + season("N")))
+```
+
+> For the model where $\alpha$ was automatically optimised, extract and interpret the estimates of $l_0$ and $\alpha$.  
+
+Solution:
+
+```{r}
+fit %>%
+  select(a.opt) %>%
+  report()
+```
+
+$l_0$ is the fitted value at time $t = 1$ (i.e., the initial level).  We estimate this to be $\hat{l}_0 = 100647$.  $\alpha$ is the smoothing parameter of the level of the time series.  We estimate this to be $\hat{\alpha} = 0.322$.  This means that we have moderate amount of smoothing of the level, and that rather than weighting heavily on the most recent observation (as would be done with the naive forecast method), there is a slow(ish) exponential decay in weights applied to past observations.
+
+
+> On three seperate plots overlay the fitted values on the original time series.  Comment on what you observe.  
+
+Solution:
+
+```{r}
+# Extract fitted values
+fit.augment = augment(fit) %>% select(.fitted)
+
+# alpha = 0.001
+p1 = pigs %>%
+  autoplot(Count) +
+  autolayer(fit.augment %>% filter(.model == "a0"), 
+            .fitted, colour = "red") + 
+  theme_bw()
+
+# alpha = 0.999
+p2 = pigs %>%
+  autoplot(Count) +
+  autolayer(fit.augment %>% filter(.model == "a1"), 
+            .fitted, colour = "red") + 
+  theme_bw()
+
+# alpha = optim
+p3 = pigs %>%
+  autoplot(Count) +
+  autolayer(fit.augment %>% filter(.model == "a.opt"),
+            .fitted, colour = "red") + 
+  theme_bw()
+
+# Plot 
+grid.arrange(p1, p2, p3, nrow = 3)
+# Note need grid and gridExtra to use grid.arrange
+# Can just plot individually instead
+```
+
+The ETS(A,N,N) model with $\alpha = 0.001$ has very smooth and nearly flat fitted values, centered around the average of the time series.  This looks very similar to the average forecast method.  The ETS(A,N,N) model with $\alpha = 0.999$ has fitted values that are not smooth and appear to be close to the most recent observation.  This looks very similar to the naive forecast method.  The ETS(A,N,N) model with $\alpha = 0.322$ has an in-between amount of smoothing.  
+
+
+> Using the `weight.plot` function provided below, plot the weights that the past 20 observations contribute to the exponenentially smoothed value at the current time point.  Comment on what you observe. 
+
+Solution:
+
+```{r}
+
+# Function to use
+weight.plot = function(alpha, N = 20) {
+  
+  # alpha is the smoothing parameter for the level
+  # N is the number of time points in the past to plot
+  
+  Weight = alpha    # First weight
+  for (i in 2:N) {  # Other weights
+    Weight[i] = Weight[i - 1] * (1 - alpha)  
+  }
+  
+  # Create tsibble
+  data <- as_tsibble(data.frame(Time = (-(1:N)),
+                      Weight = Weight), 
+           index = Time)
+
+  # Plot
+  ggplot(data = data, mapping = aes(x = Time, y = Weight)) +
+    geom_segment(aes(x = Time, xend = Time,
+                     y = 0, yend = Weight)) +
+    theme_bw()
+
+}
+
+# Plots
+p1 = weight.plot(0.001)
+p2 = weight.plot(0.999)
+p3 = weight.plot(0.322)
+grid.arrange(p1, p2, p3, nrow = 3)
+
+```
+
+The ETS(A,N,N) model with $\alpha = 0.001$ has a near equal amount of weight placed on on all past time points, nearly consistent with the average forecast method (which would have equal weight on all time points). The ETS(A,N,N) model with $\alpha = 0.999$ has pretty much all of the weight on $t - 1$ (with very minor amount of weight on previous time points), nearly consistent with the naive forecast method.  The ETS(A,N,N) model with $\alpha = 0.322$ has an in-between amount of smoothing, where we can see exponential decay of weights, i.e., $y_t$ depends on $y_{t-1}$ by 0.322, $y_{t-2}$ by $0.322\times(1-0.322) = 0.218$, etc.  Hence, exponential smoothing.  
+
+
+> For all three models, forecast 4 years into the future ($h = 48$) and plot these forecasts with their default prediction intervals. Comment on what you observe.
+
+Solution:
+
+```{r}
+fc = fit %>%
+  forecast(h = 48)
+
+fc %>% 
+  autoplot(pigs) + 
+  theme_bw()
+```
+
+The $\alpha = 0.001$ ETS(A,N,N) model has a near equal amount of weight placed on on all past time points, nearly consistent with the average forecast method (which would have equal weight on all time points). The $\alpha = 0.999$ ETS(A,N,N) model has pretty much all of the weight on $t - 1$ (with very minor amount of weight on previous time points), nearly consistent with the naive forecast method.  The $\alpha = 0.322$ ETS(A,N,N) model has an in-between amount of smoothing, where we can see exponential decay of weights, i.e., $y_t$ depends on $y_{t-1}$ by 0.322, $y_{t-2}$ by $0.322\times(1-0.322) = 0.218$, etc.  Hence, exponential smoothing. 
+ 
+
+
+# Extra: Problem 2
+
+Consider the Algerian exports time series in the `global_economy` data set.  This is plotted below.  An ETS(A,N,N) model is fitted to it and the optimal parameters are reported.  
+
+```{r}
+algeria_economy <- global_economy %>%
+  filter(Country == "Algeria") 
+
+algeria_economy %>%
+  autoplot(Exports) +
+  theme_bw()
+
+fit <- algeria_economy %>%
+  model(ETS(Exports ~ error("A") + trend("N") + season("N")))
+report(fit)  # Extract parameters
+```
+
+
+> Write your own function to implement simple exponential smoothing. The function should take arguments `y` (the time series), `alpha` (the smoothing parameter, $\alpha$) and `level` (the initial level, $l_0$). It should return the fitted values of the exponentially smoothed time series. Check to see that this function produces the same fitted values as `ETS()`.
+
+> Modify your function from the previous exercise to return the sum of squared errors rather than the fitted values. Then use the `optim` function to find the optimal values of $\alpha$ and $l_0$. Do you get the same values as the `ETS()` function?
+
+```{r}
+# Function for simple exponential smoothing
+SES <- function(y, pars) {
+  n = length(y)
+  alpha = pars[1]  # Smoothing parameter
+  level = pars[2]  # Initial level
+  yhat = rep(NA, n)  
+  yhat[1] = level    
+  for (i in 2:n) {  
+    yhat[i] = alpha * y[i - 1] + (1 - alpha) * yhat[i - 1]  # Recursive formula
+  }
+  return(yhat)
+}
+
+# Extract fitted values from SES function
+SES(algeria_economy %>% pull(Exports), c(0.8399875, 39.539))
+
+# Extract fitted values from ETS fit
+augment(fit) %>% pull(.fitted)  # Same fitted values
+
+# Sum of squared errors to minimise
+SSE = function(y, pars) {
+  n = length(y)
+  yhat = SES(y,pars)  # Call SES function
+  return(sum((y - yhat) ^ 2))
+}
+
+SSE(algeria_economy %>% pull(Exports), c(0.8399875, 39.539))
+
+
+
+```
+
+We get the same fitted values when inputting the optimum parameters from ETS into our own SES function.
+
+When performing our own optimisation, our estimates are pretty close to what is produced by the ETS function.  There may be discrepancies depending on the optimisation method and starting values.  

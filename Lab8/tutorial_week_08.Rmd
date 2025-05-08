@@ -1,0 +1,122 @@
+---
+title: "STATS 326/786"
+author: "Week 8 Tutorial"
+date: \today
+fontsize: 11pt
+output:
+  bookdown::html_document2:
+    fig_height: 5
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+    number_sections: false
+    code_folding: show
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(tidyverse)
+library(fpp3)
+library(grid)
+library(gridExtra)
+```
+
+
+# Problem 1
+
+Consider the number of pigs slaughtered in Victoria, available in the `aus_livestock` data set.  This is plotted below.
+
+```{r, echo = FALSE}
+pigs <- aus_livestock %>%
+  filter(State == "Victoria") %>%
+  filter(Animal == "Pigs")
+
+pigs %>% 
+  autoplot(Count) + 
+  theme_minimal()
+```
+
+
+> Fit three different simple exponential smoothing (`ETS(A,N,N)`) models.  One with $\alpha = 0.001$, one with $\alpha = 0.999$ and one with $\alpha$ that is automatically optimised.  You can specify the value of $\alpha$ in the `trend` function.  
+
+```{r}
+
+```
+
+> For the model where $\alpha$ was automatically optimised, extract and interpret the estimates of $l_0$ and $\alpha$.  
+
+```{r}
+
+```
+
+> On three seperate plots overlay the fitted values on the original time series.  Comment on what you observe.  
+
+```{r}
+
+```
+
+
+> Using the `weight.plot` function provided below, plot the weights that the past 20 observations contribute to the exponenentially smoothed value at the current time point.  Comment on what you observe. 
+
+```{r}
+
+# Function to use
+weight.plot = function(alpha, N = 20) {
+  
+  # alpha is the smoothing parameter for the level
+  # N is the number of time points in the past to plot
+  
+  Weight = alpha    # First weight
+  for (i in 2:N) {  # Other weights
+    Weight[i] = Weight[i - 1] * (1 - alpha)  
+  }
+  
+  # Create tsibble
+  data <- as_tsibble(data.frame(Time = (-(1:N)),
+                      Weight = Weight), 
+           index = Time)
+
+  # Plot
+  ggplot(data = data, mapping = aes(x = Time, y = Weight)) +
+    geom_segment(aes(x = Time, xend = Time,
+                     y = 0, yend = Weight)) +
+    theme_bw()
+
+}
+
+```
+
+> For all three models, forecast 4 years into the future ($h = 48$) and plot these forecasts with their default prediction intervals. Comment on what you observe.
+
+```{r}
+
+```
+
+
+# Extra: Problem 2
+
+Consider the Algerian exports time series in the `global_economy` data set.  This is plotted below.  An ETS(A,N,N) model is fitted to it and the optimal parameters are reported.  
+
+```{r}
+algeria_economy <- global_economy %>%
+  filter(Country == "Algeria") 
+
+algeria_economy %>%
+  autoplot(Exports) +
+  theme_bw()
+
+fit <- algeria_economy %>%
+  model(ETS(Exports ~ error("A") + trend("N") + season("N")))
+report(fit)  # Extract parameters
+```
+
+
+> Write your own function to implement simple exponential smoothing. The function should take arguments `y` (the time series), `alpha` (the smoothing parameter, $\alpha$) and `level` (the initial level, $l_0$). It should return the fitted values of the exponentially smoothed time series. Check to see that this function produces the same fitted values as `ETS()`.
+
+> Modify your function from the previous exercise to return the sum of squared errors rather than the fitted values. Then use the `optim` function to find the optimal values of $\alpha$ and $l_0$. Do you get the same values as the `ETS()` function?
+
+```{r}
+
+```
